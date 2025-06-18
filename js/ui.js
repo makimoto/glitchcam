@@ -35,7 +35,11 @@ export class UIController {
             button.addEventListener('click', (e) => {
                 this.elements.modeButtons.forEach(btn => btn.classList.remove('active'));
                 e.target.classList.add('active');
-                this.glitchEngine.setCorruptionMode(e.target.dataset.mode);
+                const mode = e.target.dataset.mode;
+                this.glitchEngine.setCorruptionMode(mode);
+                
+                // Analytics
+                this.trackEvent('corruption_mode', 'change', mode);
             });
         });
         
@@ -114,6 +118,9 @@ export class UIController {
             btnText.textContent = 'START CAMERA';
             btnIcon.textContent = '▶';
             this.updateStatus('Ready', false);
+            
+            // Analytics
+            this.trackEvent('camera', 'stop');
             // Don't reset glitch state when stopping camera
         } else {
             try {
@@ -123,9 +130,14 @@ export class UIController {
                     btnIcon.textContent = '■';
                     this.updateStatus('Camera Active', true);
                     this.hideError();
+                    
+                    // Analytics
+                    this.trackEvent('camera', 'start');
                 }
             } catch (error) {
                 this.showError(error.message);
+                // Analytics
+                this.trackEvent('camera', 'error', error.message);
             }
         }
     }
@@ -133,6 +145,9 @@ export class UIController {
     toggleGlitch() {
         const isActive = this.elements.glitchToggle.checked;
         this.glitchEngine.setActive(isActive);
+        
+        // Analytics
+        this.trackEvent('glitch', isActive ? 'enable' : 'disable');
     }
     
     toggleHeaderProtection() {
@@ -147,6 +162,10 @@ export class UIController {
             return;
         }
         
+        const sourceChars = this.elements.sourceChars.value || 'a';
+        const destChars = this.elements.destChars.value || 'b';
+        const mode = document.querySelector('.btn-mode.active')?.dataset.mode || 'jpeg';
+        
         this.elements.canvas.toBlob((blob) => {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -154,6 +173,13 @@ export class UIController {
             a.download = `glitch_${Date.now()}.png`;
             a.click();
             URL.revokeObjectURL(url);
+            
+            // Analytics
+            this.trackEvent('image', 'save', mode, {
+                source_chars: sourceChars,
+                dest_chars: destChars,
+                corruption_mode: mode
+            });
         });
     }
     
@@ -174,5 +200,20 @@ export class UIController {
     
     hideError() {
         this.elements.errorMessage.classList.remove('show');
+    }
+    
+    // Analytics helper function
+    trackEvent(category, action, label = null, customParameters = {}) {
+        if (typeof gtag !== 'undefined') {
+            const eventData = {
+                event_category: category,
+                event_label: label
+            };
+            
+            // Add custom parameters
+            Object.assign(eventData, customParameters);
+            
+            gtag('event', action, eventData);
+        }
     }
 }
