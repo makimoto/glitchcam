@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Real-time webcam glitch art tool with accidental data corruption effects">
+    <title>Glitch Camera</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Preview Area -->
+        <div class="preview-area">
+            <video id="camera-video" autoplay playsinline></video>
+            <canvas id="glitch-canvas"></canvas>
+            <div class="status-indicator" id="status-indicator">
+                <span class="status-icon"></span>
+                <span class="status-text">Ready</span>
+            </div>
+        </div>
+
+        <!-- Control Panel -->
+        <div class="control-panel">
+            <h1 class="app-title">GLITCH CAMERA</h1>
+            
+            <!-- Camera Controls -->
+            <div class="control-section">
+                <h2 class="section-title">CAMERA</h2>
+                <button id="camera-toggle" class="btn btn-primary">
+                    <span class="btn-icon">▶</span>
+                    <span class="btn-text">START CAMERA</span>
+                </button>
+            </div>
+
+            <!-- Glitch Controls -->
+            <div class="control-section">
+                <h2 class="section-title">GLITCH EFFECT</h2>
+                <label class="toggle-label">
+                    <input type="checkbox" id="glitch-toggle" class="toggle-input" checked>
+                    <span class="toggle-slider"></span>
+                    <span class="toggle-text">Enable Glitch</span>
+                </label>
+            </div>
+
+            <!-- Corruption Mode -->
+            <div class="control-section">
+                <h2 class="section-title">CORRUPTION MODE</h2>
+                <div class="mode-buttons">
+                    <button class="btn btn-mode active" data-mode="jpeg">JPEG STREAM</button>
+                    <button class="btn btn-mode" data-mode="png">PNG STREAM</button>
+                    <button class="btn btn-mode" data-mode="webp">WEBP STREAM</button>
+                    <button class="btn btn-mode" data-mode="bmp">BMP STREAM</button>
+                </div>
+            </div>
+
+            <!-- Character Replacement -->
+            <div class="control-section">
+                <h2 class="section-title">CORRUPTION</h2>
+                <p class="glitch-description">Replace bytes in the data stream to cause accidental visual corruption.</p>
+                
+                <label class="toggle-label">
+                    <input type="checkbox" id="header-protection" class="toggle-input" checked>
+                    <span class="toggle-slider"></span>
+                    <span class="toggle-text">Protect Headers</span>
+                </label>
+                
+                <div class="replacement-controls">
+                    <div class="input-group">
+                        <label class="input-label">FROM CHARS</label>
+                        <input type="text" id="source-chars" class="char-input" value="a" maxlength="3" placeholder="max 3">
+                        <span class="char-hint">UTF-8 bytes</span>
+                    </div>
+                    <div class="arrow">→</div>
+                    <div class="input-group">
+                        <label class="input-label">TO CHARS</label>
+                        <input type="text" id="dest-chars" class="char-input" value="b" maxlength="3" placeholder="max 3">
+                        <span class="char-hint">UTF-8 bytes</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="control-section">
+                <h2 class="section-title">ACTIONS</h2>
+                <button id="save-image" class="btn btn-secondary">
+                    <span class="btn-icon">💾</span>
+                    <span class="btn-text">SAVE IMAGE</span>
+                </button>
+            </div>
+
+            <!-- Error Display -->
+            <div class="error-message" id="error-message"></div>
+        </div>
+    </div>
+
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>

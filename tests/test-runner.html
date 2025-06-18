@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Glitch Camera Tests</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0a0a0a;
+            color: #ffffff;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .test-suite {
+            margin-bottom: 30px;
+            border: 1px solid #333;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .test-suite h2 {
+            color: #ff00ff;
+            margin-top: 0;
+        }
+        .test-case {
+            margin: 10px 0;
+            padding: 10px;
+            border-left: 4px solid #666;
+        }
+        .test-case.pass {
+            border-left-color: #00ff00;
+            background: rgba(0, 255, 0, 0.1);
+        }
+        .test-case.fail {
+            border-left-color: #ff0000;
+            background: rgba(255, 0, 0, 0.1);
+        }
+        .test-case.skip {
+            border-left-color: #ffff00;
+            background: rgba(255, 255, 0, 0.1);
+        }
+        .test-name {
+            font-weight: bold;
+        }
+        .test-error {
+            color: #ff0000;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+        .summary {
+            margin-top: 30px;
+            padding: 20px;
+            background: #1a1a1a;
+            border-radius: 8px;
+            font-size: 1.2em;
+        }
+        .summary.pass {
+            border: 2px solid #00ff00;
+        }
+        .summary.fail {
+            border: 2px solid #ff0000;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Glitch Camera Test Suite</h1>
+    <div id="test-output"></div>
+    <div id="summary"></div>
+
+    <script type="module">
+        // Simple test framework
+        class TestRunner {
+            constructor() {
+                this.suites = [];
+                this.totalTests = 0;
+                this.passedTests = 0;
+                this.failedTests = 0;
+                this.skippedTests = 0;
+            }
+
+            suite(name, callback) {
+                const suite = {
+                    name,
+                    tests: [],
+                    beforeEach: null,
+                    afterEach: null
+                };
+                
+                const context = {
+                    test: (testName, testFunc) => {
+                        suite.tests.push({ name: testName, func: testFunc, status: 'pending' });
+                    },
+                    beforeEach: (func) => {
+                        suite.beforeEach = func;
+                    },
+                    afterEach: (func) => {
+                        suite.afterEach = func;
+                    }
+                };
+                
+                callback(context);
+                this.suites.push(suite);
+            }
+
+            async run() {
+                const output = document.getElementById('test-output');
+                
+                for (const suite of this.suites) {
+                    const suiteEl = document.createElement('div');
+                    suiteEl.className = 'test-suite';
+                    suiteEl.innerHTML = `<h2>${suite.name}</h2>`;
+                    
+                    for (const test of suite.tests) {
+                        this.totalTests++;
+                        const testEl = document.createElement('div');
+                        testEl.className = 'test-case';
+                        
+                        try {
+                            if (suite.beforeEach) await suite.beforeEach();
+                            
+                            await test.func();
+                            
+                            if (suite.afterEach) await suite.afterEach();
+                            
+                            testEl.classList.add('pass');
+                            testEl.innerHTML = `
+                                <div class="test-name">✅ ${test.name}</div>
+                            `;
+                            this.passedTests++;
+                        } catch (error) {
+                            if (error.message === 'SKIP') {
+                                testEl.classList.add('skip');
+                                testEl.innerHTML = `
+                                    <div class="test-name">⏭️ ${test.name}</div>
+                                    <div class="test-error">Skipped</div>
+                                `;
+                                this.skippedTests++;
+                            } else {
+                                testEl.classList.add('fail');
+                                testEl.innerHTML = `
+                                    <div class="test-name">❌ ${test.name}</div>
+                                    <div class="test-error">${error.message}</div>
+                                `;
+                                this.failedTests++;
+                            }
+                        }
+                        
+                        suiteEl.appendChild(testEl);
+                    }
+                    
+                    output.appendChild(suiteEl);
+                }
+                
+                this.showSummary();
+            }
+
+            showSummary() {
+                const summary = document.getElementById('summary');
+                const isAllPassed = this.failedTests === 0 && this.totalTests > 0;
+                
+                summary.className = `summary ${isAllPassed ? 'pass' : 'fail'}`;
+                summary.innerHTML = `
+                    <strong>Test Summary:</strong><br>
+                    Total: ${this.totalTests} | 
+                    Passed: ${this.passedTests} | 
+                    Failed: ${this.failedTests} | 
+                    Skipped: ${this.skippedTests}
+                    <br><br>
+                    ${isAllPassed ? '🎉 All tests passed!' : '🚨 Some tests failed!'}
+                `;
+            }
+        }
+
+        // Test utilities
+        function assert(condition, message = 'Assertion failed') {
+            if (!condition) {
+                throw new Error(message);
+            }
+        }
+
+        function assertEqual(actual, expected, message = `Expected ${expected}, got ${actual}`) {
+            if (actual !== expected) {
+                throw new Error(message);
+            }
+        }
+
+        function assertThrows(func, expectedError, message = 'Expected function to throw') {
+            try {
+                func();
+                throw new Error(message);
+            } catch (error) {
+                if (expectedError && !error.message.includes(expectedError)) {
+                    throw new Error(`Expected error containing "${expectedError}", got "${error.message}"`);
+                }
+            }
+        }
+
+        function skip(message = 'Test skipped') {
+            throw new Error('SKIP');
+        }
+
+        // Make globals available
+        window.TestRunner = TestRunner;
+        window.assert = assert;
+        window.assertEqual = assertEqual;
+        window.assertThrows = assertThrows;
+        window.skip = skip;
+    </script>
+
+    <!-- Load test files -->
+    <script type="module" src="glitch-engine.test.js"></script>
+    <script type="module" src="ui-controller.test.js"></script>
+    <script type="module" src="camera-controller.test.js"></script>
+    <script type="module" src="integration.test.js"></script>
+
+    <script type="module">
+        // Run all tests
+        document.addEventListener('DOMContentLoaded', async () => {
+            await new Promise(resolve => setTimeout(resolve, 100)); // Wait for modules to load
+            if (window.runner) {
+                await window.runner.run();
+            }
+        });
+    </script>
+</body>
+</html>
